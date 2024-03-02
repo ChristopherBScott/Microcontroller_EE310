@@ -1,0 +1,90 @@
+//-----------------------------
+// Title: Assignment4.asm
+//-----------------------------
+// Purpose: To operate a very basic temperature control system, storing register
+//	 values based on a user input as well as a measured value
+// Dependencies: NONE
+// Compiler: MPLABX IDE v6.20
+// Author: Christopher Scott
+// OUTPUTS: PORTD1, PORTD2,
+// INPUTS: keypad, temperature sensor 
+// Versions:
+//  	V1.0: 3/1/2024 - First Version
+//-----------------------------
+
+    
+;---------------------
+; Initialization
+;---------------------    
+include "C:\Users\robot\OneDrive\Desktop\EE310\Assignment4.X\AssemblyConfig.inc"
+#include <xc.inc>
+
+;----------------
+; PROGRAM INPUTS
+;----------------
+#define  measuredTempInput 	45
+#define  refTempInput 		25
+
+    
+;----------------
+; REGISTERS
+;----------------
+#define  measuredTempREG 	0x20
+#define  refTempREG 		0x40
+
+
+;----------------
+; PROGRAM OUTPUTS
+;----------------
+#define  measuredTempDecimal 	0x70 
+;#define  refTempInputDecimal    
+#define   HEATER      PORTD,2
+#define   COOLER  PORTD,1
+
+
+;---------------------
+; Main Program
+;---------------------
+    PSECT absdata,abs,ovrld        ; Do not change
+
+    ORG 0x20
+    
+    If measuredTemp=refTemp then 
+set contReg=0 
+GOTO LED_OFF 
+If measuredTemp>refTemp then 
+set contReg=2 
+GOTO LED_HOT 
+ELSE
+set contReg=1 
+GOTO LED_COOL
+ 
+LED_HOT {do something or nothing}
+LED_COOL {do something or nothing}
+LED_OFF {do something or nothing}
+
+    
+;R1- If measuredTemp>refTemp → contReg=2 →  Turn on PORTD.2, 
+    ;which is connected to the COOLING system
+;R2- If measuredTemp<refTemp → contReg=1 →  Turn on PORTD.1, 
+    ;which is connected to a the HEATING system
+;R3- If measuredTemp=refTemp → contReg=0 →  display nothing
+;
+;Other system requirements include the following: 
+;
+;R4- The refTemp can be between +10 Degree celsius and +50 Degree celsius. 
+;R5- The measuredTemp can be between -20 Degree celsius and +60 Degree
+    ;celsius (can be negative). 
+;R6- You can only use PORTD. No other ports can be used as output.
+;R7- Your program must start from register 0x20 in the program memory. 
+;R8- Make sure the following variables are in the following register 
+    ;locations: refTemp→ REG 0x20, measuredTemp→ REG 0x21, contReg → REG 0x22
+;
+;The last two challenging requirements:
+;
+;R9- The decimal equivalent value of refTemp must be stored in Registers 
+    ;0x60,61,62. For example, if the refTemp=44d then 0x62=0x00,0x61=04,0x60=04.
+;R10- The decimal equivalent value of measuredTemp must be stored in 
+    ;Registers 0x70,71,72. For example, if the refTemp=94d then 0x72=0x00,
+    ;0x71=09,0x70=04.
+;    
