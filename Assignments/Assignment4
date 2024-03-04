@@ -11,8 +11,9 @@
 // Versions:
 //  	V1.0: 3/1/2024 - First Version
 //	V2.0: 3/2/2024 - Updated Version
-//	V3.0: 3/3/2024 - Final Version
-//-----------------------------
+//	V3.0: 3/3/2024 - Everything is broken Version
+//	V4.0: 3/4/2024 - EVERYTHING IS EVEN MORE BROKEN Version
+//----------------------------- 
 
     
 ;---------------------
@@ -102,4 +103,209 @@ LED_COOL:
 
 theend:
     sleep
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------
+// Title: Assignment4.asm
+//-----------------------------
+// Purpose: To operate a very basic temperature control system, storing register
+//	 values based on a user input as well as a measured value
+// Dependencies: NONE
+// Compiler: MPLABX IDE v6.20
+// Author: Christopher Scott
+// OUTPUTS: PORTD1, PORTD2,
+// INPUTS: keypad, temperature sensor 
+// Versions:
+//  	V1.0: 3/1/2024 - First Version
+//	V2.0: 3/2/2024 - Updated Version
+//	V3.0: 3/3/2024 - Everything is broken Version
+//	V4.0: 3/4/2024 - EVERYTHING IS EVEN MORE BROKEN Version
+//----------------------------- 
+    
+  
+;---------------------
+; Initialization
+;---------------------    
+include "C:\Users\robot\OneDrive\Desktop\EE310\Assignment4.X\AssemblyConfig.inc"
+#include <xc.inc>
+
+;----------------
+; PROGRAM INPUTS
+;----------------
+#define	refTemp 10
+#define	measuredTemp	-10
+
+    
+;----------------
+; REGISTERS
+;----------------
+#define	refTempREG 0x20
+#define	measuredTempREG	0x21
+#define	contREG	0X22
+
+;----------------
+; PROGRAM OUTPUTS
+;----------------
+#define    refTempInputDecimalREG  0x60 
+#define    measuredTempDecimalREG  0x70 
+#define	HEATER    PORTD,2
+#define	COOLER    PORTD,1
+
+;---------------------
+; Main Program
+;---------------------
+    PSECT absdata,abs,ovrld        ; Do not change
+
+    ORG	0                ;Reset vector
+    GOTO    start
+    ORG 0x20
+    
+    
+    
+    
+    #define TEMPmeasuredTempREG	0X100 ;TEMPPPPPP
+    #define QU 0x104 ;RAM location for quotient
+    
+start:
+    ;STORE VALUES
+    MOVLW   0
+    MOVWF   TRISD,0
+    MOVLW   measuredTemp
+    MOVWF   measuredTempREG
+    MOVWF   TEMPmeasuredTempREG ;TEMPPPPPPP
+    MOVLW   refTemp
+    MOVWF   refTempREG
+  
+    
+    ;STORE DECIMAL VERSION OF MEASURED TEMP
+   
+    MOVLW   10 ;WREG = 10, the denominator 
+    CLRF    QU,F ;clear quotient
+D_1:
+    INCF    QU,F ;increment quotient for every sub 
+    SUBWF   TEMPmeasuredTempREG ;8Ub WREG from TEMPmeasuredTempREG value 
+    BC	D_1 ;if positive go back (C = 1 for positive) 
+    ADDWF   TEMPmeasuredTempREG ;once too many, this is our first digit 
+    DECF    QU,F ;once too many for quotient 
+    MOVFF   TEMPmeasuredTempREG,0x62 ;save the first digit 
+    MOVFF   QU,TEMPmeasuredTempREG ;repeat the process one more time 
+    CLRF    QU ;clear QU 
+D_2:
+    INCF    QU,F 
+    SUBWF   TEMPmeasuredTempREG ;8Ub WREG from TEMPmeasuredTempREG value
+    BC	D_2 ; (C = 1 for positive) 
+    ADDWF   TEMPmeasuredTempREG 
+    DECF    QU,F ;once too many 
+    MOVFF   TEMPmeasuredTempREG,0x63 ; 2nd digit
+    MOVFF   QU,0x64 ;3rd digit 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ;CHECK IF MEASURED IS A NEGATIVE VALUE
+    CLRF    STATUS
+    MOVLW   0X0
+    MOVF   measuredTempREG,0
+    BN	LED_HOT
+    
+    ;COMPARE
+    MOVLW   refTemp
+    CPFSGT  measuredTempREG
+    GOTO    next1
+    GOTO    LED_COOL
+next1:
+    CPFSLT  measuredTempREG
+    GOTO    next2
+    GOTO    LED_HOT
+    
+    ;AT THIS POINT, THEY MUST BE EQUAL, SO ALL OFF
+next2:
+    MOVLW   0
+    MOVWF   contREG
+    BCF	    PORTD,1
+    BCF	    PORTD,2
+    GOTO    theend
+    
+    
+LED_HOT:	
+    MOVLW   2
+    MOVWF   contREG
+    BCF	    PORTD,1
+    BSF	    PORTD,2
+    GOTO    theend
+    
+LED_COOL:
+    MOVLW   1
+    MOVWF   contREG
+    BCF	    PORTD,2
+    BSF	    PORTD,1
+    GOTO    theend
+
+theend:
+    sleep
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+;; Assume we have a 2-digit hexadecimal value in the variable 'hex_value'
+;; We'll convert it to decimal and store each digit in separate registers
+;
+;    ; Initialize the hex value (you can replace this with your actual input)
+;    MOVLW 0x3A       ; Example: 2-digit hex value '3A'
+;
+;    ; Extract the high nibble (first digit)
+;    MOVWF TEMP       ; Store the hex value in a temporary register
+;    SWAPF TEMP, W    ; Swap the nibbles (high nibble becomes low nibble)
+;    ANDLW 0x0F       ; Mask out the low nibble
+;    MOVWF HIGH_DIGIT ; Store the high digit in HIGH_DIGIT register
+;
+;    ; Extract the low nibble (second digit)
+;    MOVF TEMP, W     ; Retrieve the original hex value
+;    ANDLW 0x0F       ; Mask out the high nibble
+;    MOVWF LOW_DIGIT  ; Store the low digit in LOW_DIGIT register
+;
+;    ; Now HIGH_DIGIT and LOW_DIGIT contain the decimal values of each digit
+;    ; You can use these registers as needed in your program
+;
+;    ; ... (rest of your code)
+;
+;TEMP        EQU 0x20   ; Temporary register
+;HIGH_DIGIT  EQU 0x21   ; Register for high digit (decimal)
+;LOW_DIGIT   EQU 0x22   ; Register for low digit (decimal)
+    
     
