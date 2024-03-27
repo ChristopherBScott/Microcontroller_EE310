@@ -10,7 +10,7 @@
 ; Compiler: MPLAB X IDE v6.2
 ; Author: Christopher Scott
 ; Versions:
-;       V1.0: Original
+;       V3.0: works in sim, but not on board
     
 #include "C:\Users\robot\OneDrive\Desktop\EE310\A6B.X\Assembly_HeaderFile.inc"
 #include <xc.inc>
@@ -20,89 +20,123 @@
 ;---------------------
 ; Program Inputs
 ;---------------------
-    Inner_loop  equ 15   // these two define how long (150?)
-    Outer_loop  equ 10   //the delay loop will last   (100?)
+    Inner_loop  equ 255   // these two define how long (150?)
+    Outer_loop  equ 255   //the delay loop will last   (100?)
  
 ;---------------------
 ; Program Constants
 ;---------------------
-    Inner_count equ	0x30
-    Outer_count equ	0x31
+    Inner_count equ	0x30 ;just registers to hold count
+    Outer_count equ	0x31 ;just registers to hold count
 
-;---------------------
-; Main Program
-;---------------------
+ ;--------------------
+ ; Initial Setup
+ ;--------------------
     ORG 0x10
     
     call    saveVal ;save possible outputs into file registers
     
     ;setup input and output ports
-    MOVLW 0x0
-    MOVWF TRISD ;Port D an output port
-    MOVLW 0xFF
-    MOVWF TRISB ;Port B an input port (we only use input on bits 3 and 4)
+    BANKSEL	PORTD ;
+    CLRF	PORTD ;Init PORT
+    BANKSEL	LATD ;Data Latch
+    CLRF	LATD ;
+    BANKSEL	ANSELD ;
+    CLRF	ANSELD ;digital I/O
+    BANKSEL	TRISD ;
+    MOVLW	0b00000000 ;Set RD as all outputs
+    MOVWF	TRISD
+    BANKSEL	PORTB ;
+    CLRF	PORTB ;Init PORT
+    BANKSEL	LATB ;Data Latch
+    CLRF	LATB ;
+    BANKSEL	ANSELB ;
+    CLRF	ANSELB ;digital I/O
+    BANKSEL	TRISB ;
+    MOVLW	0b00011000 ;Set RB3 and 4 as inputs
+    MOVWF	TRISB 
     
     ;establish pointer
     CLRF    FSR0L
     CLRF    FSR0H
     LFSR    0, 0x10 ;point at value to display 0 at REG10
-    CALL    loopDelay
-       
+    CALL    loopDelay 
+ 
+ 
+    
+  
+    
+    
+    
+    
+;---------------------
+; Main Program
+;---------------------      
 start:
     BTFSC   PORTB,3 ;check if button A is being pressed
-    GOTO    Ahigh ;A is not 0, so not being pressed
-    GOTO    Alow ;A is 0, so being pressed
+    GOTO    Ahigh ;A is high, so being pressed
+    GOTO    Alow ;A is low, so not being pressed
 back2main:
     MOVFF   INDF0, PORTD ;display pointer value on 7 segment
-    MOVFF   INDF0, PORTD ; display pointer value in registers for testing purposes
+    MOVFF   INDF0, 0x60 ; display pointer value in registers for testing
     CALL    loopDelay
     GOTO    start
     
     
     
 Ahigh:
-    BTFSC   PORTB,4 ;check if button B is the only one pressed
-    GOTO    back2main ;b is not being pressed either, so just hold value
-    
-    ;if here, B is the only one being pressed
-    CLRF    STATUS
-    INCF    FSR0L,F
-    MOVFF   FSR0L,WREG ;maybe unnecessary?
-    BNZ	    back2main ;if not zero, return to normal operation
-    LFSR    0, 0x10 ;it reached a 0, so need to wrap back to 0x10
+    BTFSC   PORTB,4 ;check if button B is also pressed
+    GOTO    zeroOut
+    ;if here, then only A is being pressed
+    DECF    FSR0L,F
+    MOVLW   0x0F
+    CPFSEQ  FSR0L
+    GOTO    back2main
+    LFSR    0, 0x1F ;pointer was at a 0, so need to move to 'F'
+    GOTO    back2main
+
+zeroOut:
+    LFSR    0, 0x10 ;point at value to display 0 at REG10
     GOTO    back2main
     
 Alow:
     BTFSC   PORTB,4 ;check if button B is also pressed
-    GOTO onlyA ;B is 1, so only A is pressed
+    GOTO    onlyB ;only B is pressed   
+    ;if here, nothing has been pressed
+    GOTO    back2main ;hold current val
     
-    ;if here, both must be pressed, so reset to 0
-    LFSR    0, 0x10 ;point at value to display 0 at REG10
+onlyB:
+    ;if here, B is the only one being pressed
+    INCF    FSR0L,F
+    MOVLW   0x20
+    CPFSEQ  FSR0L
+    GOTO    back2main
+    LFSR    0, 0x10 ;it reached a 0, so need to wrap back to 0x10
     GOTO    back2main
     
-onlyA:
-    CLRF    STATUS
-    DECF    FSR0L,F
-    MOVFF   FSR0L,WREG ;maybe unnecessary?
-    BNZ	    back2main ;if not zero, return to normal operation
-    LFSR    0, 0x1F ;it reached a 0, so need to wrap back to 0x1F
-    GOTO    back2main
-    
-    GOTO    back2main
     
     
 ;-----The Delay Subroutine    
 loopDelay: 
-    MOVLW       Inner_loop
-    MOVWF       Inner_count
-    MOVLW       Outer_loop
-    MOVWF       Outer_count
+    MOVLW   Inner_loop
+    MOVWF   Inner_count
+    MOVLW   Outer_loop
+    MOVWF   Outer_count
+;_loop1:
+;    DECF        Inner_count,1 // inner loop
+;    BNZ         _loop1
+;    ;DECF        Outer_count,1 // outer loop
+;    ;BNZ        _loop1
+;    RETURN
 _loop1:
-    DECF        Inner_count,1 // inner loop
-    BNZ         _loop1
-    DECF        Outer_count,1 // outer loop
-    BNZ        _loop1
+    DECF    Inner_count,1
+    BNZ	    _loop1
+    MOVLW   Inner_loop
+    MOVWF   Inner_count
+    DECF    Outer_count,1
+    BNZ	    _loop1
     RETURN
+    
     
     
     
