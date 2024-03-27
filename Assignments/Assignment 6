@@ -10,7 +10,7 @@
 ; Compiler: MPLAB X IDE v6.2
 ; Author: Christopher Scott
 ; Versions:
-;       V3.0: works in sim, but not on board
+;       V4.0: Full working version, bug tested
     
 #include "C:\Users\robot\OneDrive\Desktop\EE310\A6B.X\Assembly_HeaderFile.inc"
 #include <xc.inc>
@@ -79,6 +79,7 @@ start:
 back2main:
     MOVFF   INDF0, PORTD ;display pointer value on 7 segment
     MOVFF   INDF0, 0x60 ; display pointer value in registers for testing
+    CALL    loopDelay
     CALL    loopDelay
     GOTO    start
     
@@ -167,7 +168,7 @@ saveVal:
     movwf   0x1B
     movlw   0x39
     movwf   0x1C
-    movlw   0x5D
+    movlw   0x5E
     movwf   0x1D
     movlw   0x79
     movwf   0x1E
